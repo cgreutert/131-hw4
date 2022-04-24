@@ -1,0 +1,62 @@
+---
+title: "Homework Four: Resampling"
+author: "Carly Greutert"
+date: "24 April 2022"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE, include=FALSE}
+library(tidymodels)
+library(ggplot2)
+library(discrim)
+library(corrr)
+library(klaR) # for naive bayes
+library(caret)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(corrplot)
+library(ggthemes)
+library(cli)
+library(recipes)
+library(pROC)
+library(yardstick)
+library(MASS)
+library(poissonreg)
+library(naivebayes)
+tidymodels_prefer()
+```
+
+```{r echo=TRUE, message=FALSE}
+titanic <- read_csv('C:\\Program Files\\Git\\tmp\\131-hw4\\titanic.csv')
+names <- c('pclass', 'survived')
+titanic[,names] <- lapply(titanic[,names] , factor)
+```
+
+1.
+```{r}
+set.seed(777)
+titanic_split <- initial_split(titanic, prop = 0.80, strata = 'survived')
+titanic_train <- training(titanic_split)
+titanic_test <- testing(titanic_split)
+titanic_recipe <- recipe(survived ~ pclass + sex + age + sib_sp + parch + fare, data = titanic_train)
+titanic_recipe <- titanic_recipe %>%
+  step_impute_linear(age) %>%
+  step_dummy(all_nominal_predictors())%>%
+  step_interact(~sex:fare) %>%
+  step_interact(~age:fare)
+dim(titanic_train)
+dim(titanic_test)
+```
+From the dim() function above, we can verify the number of observations was split correctly.                         
+2.
+```{r}
+titanic_folds <- vfold_cv(titanic_train, v = 10)
+titanic_folds
+```
+
+What we are doing above is resampling by splitting our training data into further subsets in order to provide a better evaluation for our model. K-fold cross-validation splits our data K-ways and has K-1 subsets and one subset for validation. It will help us train our model further. We should use k-fold cross-validation, rather than simply fitting and testing models on the entire training set in order to decide which model produces the lowest error rates and is therefore the best model to use. If we did use the entire training set, the resampling method used would be the validation set approach. 
