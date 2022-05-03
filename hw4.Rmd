@@ -80,11 +80,15 @@ qda_wkflow <- workflow() %>%
   add_model(qda_mod) %>% 
   add_recipe(titanic_recipe)
 ```
-Across 10 folds, I will be fitting 30 models to the data.                                     5.
+Across 10 folds, I will be fitting 30 models to the data.                                       
+5.
 ```{r}
 log_fit <- log_wkflow %>% fit_resamples(titanic_folds)
+log_fit
 lda_fit <- lda_wkflow %>% fit_resamples(titanic_folds)
+lda_fit
 qda_fit <- qda_wkflow %>% fit_resamples(titanic_folds)
+qda_fit
 ```
 
 6.
@@ -93,3 +97,17 @@ collect_metrics(log_fit)
 collect_metrics(lda_fit)
 collect_metrics(qda_fit)
 ```
+The means for accuracy and roc_auc all perform similarly across these three models in terms of the mean. Thus, standard error will be a more helpful in determining the best fitted model. Above, we see our QDA fitted model has a 0.018 standard error as opposed to the others 0.019 error, a small but noticeable difference. Therefore, QDA is our best fitted model since it has the lowest standard error.                                                                     
+7.
+```{r}
+final_fit <- fit(qda_wkflow, titanic_train)
+final_fit
+```
+
+8.
+```{r}
+predict(final_fit, new_data = titanic_test, type = "class") %>% 
+  bind_cols(titanic_test %>% select(survived)) %>% 
+  accuracy(truth = survived, estimate = .pred_class)
+```
+My model's testing accuracy ended up performing very similarly to the model on the folded data. This is to be expected since the folding of the data allowed for more training and testing so that it will perform similarly on new data, which it accomplished with roughly 82% accuracy. 
