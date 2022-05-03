@@ -1,7 +1,6 @@
 ---
 title: "Homework Four: Resampling"
 author: "Carly Greutert"
-date: "24 April 2022"
 output: github_document
 ---
 
@@ -47,7 +46,7 @@ titanic_recipe <- recipe(survived ~ pclass + sex + age + sib_sp + parch + fare, 
 titanic_recipe <- titanic_recipe %>%
   step_impute_linear(age) %>%
   step_dummy(all_nominal_predictors())%>%
-  step_interact(~sex:fare) %>%
+  step_interact(~starts_with("sex"):fare) %>%
   step_interact(~age:fare)
 dim(titanic_train)
 dim(titanic_test)
@@ -59,4 +58,38 @@ titanic_folds <- vfold_cv(titanic_train, v = 10)
 titanic_folds
 ```
 
-What we are doing above is resampling by splitting our training data into further subsets in order to provide a better evaluation for our model. K-fold cross-validation splits our data K-ways and has K-1 subsets and one subset for validation. It will help us train our model further. We should use k-fold cross-validation, rather than simply fitting and testing models on the entire training set in order to decide which model produces the lowest error rates and is therefore the best model to use. If we did use the entire training set, the resampling method used would be the validation set approach. 
+3. What we are doing above is resampling by splitting our training data into further subsets in order to provide a better evaluation for our model. K-fold cross-validation splits our data K-ways and has K-1 subsets and one subset for validation. It will help us train our model further. We should use k-fold cross-validation, rather than simply fitting and testing models on the entire training set in order to decide which model produces the lowest error rates and is therefore the best model to use. If we did use the entire training set, the resampling method used would be the validation set approach.                                                      
+4. 
+```{r}
+log_reg <- logistic_reg() %>% 
+  set_engine("glm") %>% 
+  set_mode("classification")
+log_wkflow <- workflow() %>% 
+  add_model(log_reg) %>% 
+  add_recipe(titanic_recipe)
+lda_mod <- discrim_linear() %>% 
+  set_mode("classification") %>% 
+  set_engine("MASS")
+lda_wkflow <- workflow() %>% 
+  add_model(lda_mod) %>% 
+  add_recipe(titanic_recipe)
+qda_mod <- discrim_quad() %>% 
+  set_mode("classification") %>% 
+  set_engine("MASS")
+qda_wkflow <- workflow() %>% 
+  add_model(qda_mod) %>% 
+  add_recipe(titanic_recipe)
+```
+Across 10 folds, I will be fitting 30 models to the data.                                     5.
+```{r}
+log_fit <- log_wkflow %>% fit_resamples(titanic_folds)
+lda_fit <- lda_wkflow %>% fit_resamples(titanic_folds)
+qda_fit <- qda_wkflow %>% fit_resamples(titanic_folds)
+```
+
+6.
+```{r}
+collect_metrics(log_fit)
+collect_metrics(lda_fit)
+collect_metrics(qda_fit)
+```
